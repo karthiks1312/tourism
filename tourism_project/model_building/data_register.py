@@ -1,46 +1,29 @@
-
-# from google.colab import userdata
-# access_key = userdata.get("Login")
-
-# access_key = HfApi(token=os.getenv("Login"))
-
-# access_token = HfApi(token=os.environ["Login"])
-
+from huggingface_hub import HfApi, create_repo
+from huggingface_hub.utils import RepositoryNotFoundError
 import os
-HF_TOKEN = os.getenv("HF_TOKEN")
 
-# 2) Set variables - EDIT these!
-HF_USERNAME = "karthiks969"   # e.g. "sarassu"
-REPO_NAME   = "tourism-dataset"    # repo id you want
-REPO_ID     = f"{HF_USERNAME}/{REPO_NAME}"
-HF_TOKEN    =  HF_TOKEN       # Paste your Hugging Face token here
+HF_USERNAME = os.getenv("HF_REPO_ID")
+REPO_ID = f"{HF_USERNAME}/tourism-dataset"
+repo_type = "dataset"
 
-# 3) Create the dataset repo (if it already exists this will raise - we'll handle below)
-from huggingface_hub import HfApi, upload_folder, create_repo, login
-api = HfApi()
+api = HfApi(token=os.getenv("HF_TOKEN"))
 
-# Login programmatically (so upload_folder can use the token)
-login(token=HF_TOKEN)
-
-# Create repo if not exists
+# Create the dataset repo if it does not exist
 try:
-    create_repo(REPO_ID, repo_type="dataset", private=False, exist_ok=True)
-    print("Repo created/exists:", REPO_ID)
-except Exception as e:
-    print("create_repo warning:", e)
+    api.repo_info(repo_id=REPO_ID, repo_type=repo_type)
+    print(f"Dataset repo '{REPO_ID}' already exists. Using it.")
+except RepositoryNotFoundError:
+    print(f"Dataset repo '{REPO_ID}' not found. Creating it...")
+    create_repo(repo_id=REPO_ID, repo_type=repo_type, private=False)
 
-# 4) Upload the local folder /content/data to the dataset repo root (or into a 'data/' subfolder)
-local_folder = "tourism_project/data"   # the folder you mentioned
+local_folder = "tourism_project/data"
 if not os.path.exists(local_folder):
-    raise SystemExit("Local folder not found: " + local_folder)
+    raise SystemExit(f"Local folder not found: {local_folder}")
 
-# upload_folder will recursively upload files and create commits
-upload_folder(
+api.upload_folder(
     folder_path=local_folder,
-    path_in_repo="data",       # files will be uploaded under /data in the dataset repo
+    path_in_repo="data",
     repo_id=REPO_ID,
-    repo_type="dataset",
-    token=HF_TOKEN,
-    commit_message="Upload tourism data from Colab"
+    repo_type=repo_type,
 )
-print("Upload finished. Visit: https://huggingface.co/datasets/" + REPO_ID)
+print(f"Upload finished: https://huggingface.co/datasets/{REPO_ID}")

@@ -1,24 +1,29 @@
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, create_repo
+from huggingface_hub.utils import RepositoryNotFoundError
 import os
 
-# from google.colab import userdata
-# access_token = userdata.get("Login")
+REPO_ID = f"{os.getenv('HF_REPO_ID')}/Tourism-Package-Prediction"
+repo_type = "space"
 
-# access_token = HfApi(token=os.environ["Login"])
-import os
-HF_TOKEN = "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"
+api = HfApi(token=os.getenv("HF_TOKEN"))
 
-HF_USERNAME = "karthiks969"   # e.g. "sarassu"
-REPO_NAME   = "tourism-dataset"    # repo id you want
-REPO_ID     = f"{HF_USERNAME}/{REPO_NAME}"
-HF_TOKEN = HF_TOKEN
-# HF_TOKEN    = access_token
+# Create the Space if it does not exist
+try:
+    api.repo_info(repo_id=REPO_ID, repo_type=repo_type)
+    print(f"Space '{REPO_ID}' already exists. Using it.")
+except RepositoryNotFoundError:
+    print(f"Space '{REPO_ID}' not found. Creating new Space...")
+    create_repo(
+        repo_id=REPO_ID,
+        repo_type=repo_type,
+        space_sdk="docker",
+        private=False,
+    )
 
-# api = HfApi(token=os.getenv("HF_TOKEN"))
-api = HfApi(token=HF_TOKEN)
 api.upload_folder(
-    folder_path="tourism_project/deployment",     # the local folder containing your files
-    repo_id=REPO_ID,          # the target repo
-    repo_type="space",                      # dataset, model, or space
-    path_in_repo="",                          # optional: subfolder path inside the repo
+    folder_path="tourism_project/deployment",
+    repo_id=REPO_ID,
+    repo_type=repo_type,
+    path_in_repo="",
 )
+print("Deployment files uploaded to Hugging Face Space")
